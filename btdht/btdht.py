@@ -189,6 +189,9 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
             node.pong(socket=self.server.socket, trans_id=trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
             info_hash = args["info_hash"].encode("hex")
             self.server.dht.ht.add_peer(info_hash, (node.host, node.port))
+
+            logger.debug('download ...........................')
+            simMetadata.download_metadata((node.host, node.port), info_hash)
             ## check on token (need to store them beforehand when responding to get_peers)
             # token = args['token']
             # info_hash = args['info_hash']
@@ -251,8 +254,8 @@ class DHT(object):
         self.iterative_thread = threading.Thread(target=self.iterative)
         self.iterative_thread.daemon = True
 
-        self.download_thread = threading.Thread(target=self.download_metadata)
-        self.download_thread.daemon = True
+        # self.download_thread = threading.Thread(target=self.download_metadata)
+        # self.download_thread.daemon = True
 
     def start(self):
         self.server_thread.start()
@@ -277,7 +280,7 @@ class DHT(object):
         self.running = True
 
         self.iterative_thread.start()
-        self.download_thread.start()
+        # self.download_thread.start()
 
         return True
 
@@ -310,34 +313,34 @@ class DHT(object):
                     node.ping(socket=self.server.socket, sender_id=self.node._id)
 
             # peer search
-            for hash_id in self.ht.hashes.keys():
-                if self.random_find_peers:
-                    nodes = self.rt.sample(self.sample_count)
-                else:
-                    nodes = self.rt.get_close_nodes(hash_id, self.sample_count)
-                for node_id, node in nodes:
-                    node.get_peers(hash_id, socket=self.server.socket, sender_id=self.node._id)
+            # for hash_id in self.ht.hashes.keys():
+            #     if self.random_find_peers:
+            #         nodes = self.rt.sample(self.sample_count)
+            #     else:
+            #         nodes = self.rt.get_close_nodes(hash_id, self.sample_count)
+            #     for node_id, node in nodes:
+            #         node.get_peers(hash_id, socket=self.server.socket, sender_id=self.node._id)
 
             # peer announce
-            for hash_id in self.announces.hashes.keys():
-                nodes_id = self.peer_tokens.get_hash_peers(hash_id)
-                if len(nodes_id) > 0:
-                    for node_id in nodes_id:
-                        node = self.rt.node_by_id(node_id)
-                        token = node.get_token(hash_id)
-                        if token:
-                            node.announce_peer(token, hash_id, socket=self.server.socket, sender_id=self.node._id)
-                        else:
-                            logger.error("Unknown token for %s" % hash_id.encode("hex"))
-                else:
-                    logger.error("Cannot find node to announce to for %s" % hash_id.encode("hex"))
+            # for hash_id in self.announces.hashes.keys():
+            #     nodes_id = self.peer_tokens.get_hash_peers(hash_id)
+            #     if len(nodes_id) > 0:
+            #         for node_id in nodes_id:
+            #             node = self.rt.node_by_id(node_id)
+            #             token = node.get_token(hash_id)
+            #             if token:
+            #                 node.announce_peer(token, hash_id, socket=self.server.socket, sender_id=self.node._id)
+            #             else:
+            #                 logger.error("Unknown token for %s" % hash_id.encode("hex"))
+            #     else:
+            #         logger.error("Cannot find node to announce to for %s" % hash_id.encode("hex"))
 
             time.sleep(self.iteration_timeout)
 
-    def download_metadata(self):
-        peers = self.server.dht.ht.get_one_hash()
-        if peers:
-            simMetadata.download_metadata(peers[1], peers[0])
+    # def download_metadata(self):
+    #     peers = self.server.dht.ht.get_one_hash()
+    #     if peers:
+    #         simMetadata.download_metadata(peers[1], peers[0])
 
     def stop(self):
         self.running = False
@@ -345,8 +348,8 @@ class DHT(object):
         self.iterative_thread.join()
         logger.debug("Stopped iterative loop")
 
-        self.download_thread.join()
-        logger.debug("Stopped download loop")
+        # self.download_thread.join()
+        # logger.debug("Stopped download loop")
 
         self.server.shutdown()
         self.server_thread.join()
