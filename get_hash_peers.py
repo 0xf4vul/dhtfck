@@ -30,21 +30,25 @@ if __name__ == "__main__":
     dht.bootstrap('router.bittorrent.com', 6881)
 
     # Find me peers for that torrent hashes
-    dht.ht.add_hash(current_magnet)
-    
-    res = []
-    for count in xrange(10):
-        logger.info("DHT Nodes found: %d" % (dht.rt.count()))
-        logger.info("Bad DHT nodes found: %d" % (dht.rt.bad_count()))
-        logger.info("Total peers found: %d" % (dht.ht.count_all_peers()))
+    # dht.ht.add_hash(current_magnet)
 
-        # How many peers at this moment?
-        peers = dht.ht.get_hash_peers(current_magnet)
-        for peer in peers:
-            res.append((peer))
-            logger.info("Found peer: %s:%d" % (peer))
+    # res = []
+    # for count in xrange(10):
+    #     logger.info("DHT Nodes found: %d" % (dht.rt.count()))
+    #     logger.info("Bad DHT nodes found: %d" % (dht.rt.bad_count()))
+    #     logger.info("Total peers found: %d" % (dht.ht.count_all_peers()))
 
-        time.sleep(3)
-    logger.info("Found peers (total): %d" % (len(res)))
-    logger.info("Found peers (uniq): %d" % (len(set(res))))
+    #     # How many peers at this moment?
+    #     peers = dht.ht.get_hash_peers(current_magnet)
+    #     for peer in peers:
+    #         res.append((peer))
+    #         logger.info("Found peer: %s:%d" % (peer))
+
+    #     time.sleep(3)
+    # logger.info("Found peers (total): %d" % (len(res)))
+    # logger.info("Found peers (uniq): %d" % (len(set(res))))
+
+    while True:
+        time.sleep(1)
     dht.stop()
+

@@ -21,8 +21,9 @@ if __name__ == "__main__":
     dht = DHT(host='0.0.0.0', port=60000)
     dht.start()
 
+    # Boostrap it
+    dht.bootstrap('router.bittorrent.com', 6881)
     while True:
         continue
-    
-    # Boostrap it
-    #dht.bootstrap('localhost', 6001)
+
+

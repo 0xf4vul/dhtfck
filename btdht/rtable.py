@@ -17,7 +17,7 @@ class RoutingTable(object):
     # This gives us significant memory overhead over a bucketed
     # implementation and ruins the logN scaling behaviour of the DHT.
     # We don't care, we have a lot of mem ;)
-    
+
     def __init__(self):
         self.nodes = {}
         self.bad_nodes = {}

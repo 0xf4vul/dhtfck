@@ -18,7 +18,7 @@ class Node(object):
         self.trans = {}
         self.tokens = {} # tokens generated remotely
         self.local_tokens = {} # tokens generated locally
-        
+
         self.lock = threading.Lock()
 
         self.access_time = time.time()
@@ -50,7 +50,7 @@ class Node(object):
     def get_token(self, info_hash):
         """ Returns token for the info hash, if known """
         return self.tokens.get(info_hash,None)
-            
+
     def delete_token(self, info_hash):
         """ Delete specified info hash's token """
         with self.lock:
@@ -64,12 +64,12 @@ class Node(object):
     def get_local_token(self, info_hash):
         """ Returns locally created token for the info hash, if known """
         return self.local_tokens.get(info_hash,None)
-            
+
     def delete_local_token(self, info_hash):
         """ Delete specified info hash's locally created token """
         with self.lock:
             del self.local_tokens[info_hash]
-            
+
     def update_access(self, unixtime=None):
         """ Update last access/modify time of this node """
         with self.lock:
@@ -105,7 +105,7 @@ class Node(object):
             msg
         ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
-                
+
     def ping(self, socket=None, sender_id=None, lock=None):
         """ Construct query ping message """
         trans_id = self.add_trans("ping")
@@ -116,15 +116,15 @@ class Node(object):
                 "id": sender_id
             }
         }
-        logger.debug("ping msg to %s:%d, y:%s, q:%s, t: %r" % (
-            self.host, 
-            self.port, 
-            message["y"], 
-            message["q"], 
-            trans_id.encode("hex")
-        ))
+        # logger.debug("ping msg to %s:%d, y:%s, q:%s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     message["q"],
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
-        
+
     def pong(self, socket=None, trans_id=None, sender_id=None, lock=None):
         """ Construct reply message for ping """
         message = {
@@ -134,31 +134,31 @@ class Node(object):
             }
         }
         logger.debug("pong msg to %s:%d, y:%s, t: %r" % (
-            self.host, 
-            self.port, 
-            message["y"], 
+            self.host,
+            self.port,
+            message["y"],
             trans_id.encode("hex")
         ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
-        
+
     def find_node(self, target_id, socket=None, sender_id=None, lock=None):
         """ Construct query find_node message """
         trans_id = self.add_trans("find_node")
         message = {
             "y": "q",
             "q": "find_node",
-            "a": { 
+            "a": {
                 "id": sender_id,
                 "target": target_id
             }
         }
-        logger.debug("find_node msg to %s:%d, y:%s, q:%s, t: %r" % (
-            self.host, 
-            self.port, 
-            message["y"], 
-            message["q"], 
-            trans_id.encode("hex")
-        ))
+        # logger.debug("find_node msg to %s:%d, y:%s, q:%s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     message["q"],
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
     def found_node(self, found_nodes, socket=None, trans_id=None, sender_id=None, lock=None):
@@ -172,9 +172,9 @@ class Node(object):
             }
         }
         logger.debug("found_node msg to %s:%d, y:%s, t: %r" % (
-            self.host, 
-            self.port, 
-            message["y"], 
+            self.host,
+            self.port,
+            message["y"],
             trans_id.encode("hex")
         ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
@@ -185,16 +185,16 @@ class Node(object):
         message = {
             "y": "q",
             "q": "get_peers",
-            "a": { 
+            "a": {
                 "id": sender_id,
                 "info_hash": info_hash
             }
         }
         logger.debug("get_peers msg to %s:%d, y:%s, q:%s, t: %r" % (
-            self.host, 
-            self.port, 
-            message["y"], 
-            message["q"], 
+            self.host,
+            self.port,
+            message["y"],
+            message["q"],
             trans_id.encode("hex")
         ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
@@ -221,8 +221,8 @@ class Node(object):
                 }
             }
         logger.info("got_peers msg to %s:%d, y:%s, v: %s, n: %s, tok: %s, t: %r" % (
-            self.host, 
-            self.port, 
+            self.host,
+            self.port,
             message["y"],
             message["r"].get("values",None),
             decode_nodes(message["r"].get("nodes",None)),

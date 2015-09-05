@@ -14,19 +14,22 @@ from .bencode import bdecode, BTFailure
 from .node import Node
 from .utils import decode_nodes, encode_nodes, random_node_id, unpack_host, unpack_hostport, pack_host, pack_hostport, create_token
 
+import simMetadata
+
 logger = logging.getLogger(__name__)
 
 class DHTRequestHandler(SocketServer.BaseRequestHandler):
 
     def handle(self):
 
-        logger.debug("Got packet from: %s:%d" % (self.client_address))
+        # logger.debug("Got packet from: %s:%d" % (self.client_address))
         req = self.request[0].strip()
 
         try:
             message = bdecode(req)
             msg_type = message["y"]
-            logger.debug("This is DHT connection with msg_type: %s" % (msg_type))
+            if msg_type == 'q':
+                logger.debug("This is DHT connection with msg_type: %s" % (msg_type))
 
             if msg_type == "r":
                 self.handle_response(message)
@@ -46,7 +49,7 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
         node_id = args["id"]
 
         client_host, client_port = self.client_address
-        logger.debug("Response message from %s:%d, t:%r, id:%r" % (client_host, client_port, trans_id.encode("hex"), node_id.encode("hex")))
+        # logger.debug("Response message from %s:%d, t:%r, id:%r" % (client_host, client_port, trans_id.encode("hex"), node_id.encode("hex")))
 
         # Do we know already about this node?
         node = self.server.dht.rt.node_by_id(node_id)
@@ -59,14 +62,14 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
                 logger.debug("Cannot find appropriate node for transaction: %r" % (trans_id.encode("hex")))
                 return
 
-        logger.debug("We found apropriate node %r for %r" % (node, node_id.encode("hex")))
+        # logger.debug("We found apropriate node %r for %r" % (node, node_id.encode("hex")))
 
         if trans_id in node.trans:
-            logger.debug("Found and deleting transaction %r in node: %r" % (trans_id.encode("hex"), node))
+            # logger.debug("Found and deleting transaction %r in node: %r" % (trans_id.encode("hex"), node))
             trans = node.trans[trans_id]
             node.delete_trans(trans_id)
         else:
-            logger.debug("Cannot find transaction %r in node: %r" % (trans_id.encode("hex"), node))
+            # logger.debug("Cannot find transaction %r in node: %r" % (trans_id.encode("hex"), node))
             trans_buf = dict(node.trans)
             for trans in trans_buf:
                 logger.debug(trans.encode("hex"))
@@ -79,12 +82,12 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
         t_name = trans["name"]
         if t_name == "find_node":
             node.update_access()
-            logger.debug("find_node response from %r" % (node))
+            # logger.debug("find_node response from %r" % (node))
             if "nodes" in args:
                 new_nodes = decode_nodes(args["nodes"])
-                logger.debug("We got new nodes from %r" % (node))
+                # logger.debug("We got new nodes from %r" % (node))
                 for new_node_id, new_node_host, new_node_port in new_nodes:
-                    logger.debug("Adding %r %s:%d as new node" % (new_node_id.encode("hex"), new_node_host, new_node_port))
+                    # logger.debug("Adding %r %s:%d as new node" % (new_node_id.encode("hex"), new_node_host, new_node_port))
                     self.server.dht.rt.update_node(new_node_id, Node(new_node_host, new_node_port, new_node_id))
 
             # cleanup boot node
@@ -98,13 +101,13 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
                 self.server.dht.rt.remove_node(node._id)
         elif t_name == "ping":
             node.update_access()
-            logger.debug("ping response for: %r" % (node))
+            # logger.debug("ping response for: %r" % (node))
         elif t_name == "get_peers":
             node.update_access()
             info_hash = trans["info_hash"]
-            
+
             logger.debug("get_peers response for %r" % (node))
-                        
+
             if "token" in args:
                 token = args["token"]
                 logger.debug("Got token: %s" % (token.encode("hex")))
@@ -130,12 +133,12 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
                 for new_node_id, new_node_host, new_node_port in new_nodes:
                     logger.debug("Adding %r %s:%d as new node" % (new_node_id.encode("hex"), new_node_host, new_node_port))
                     self.server.dht.rt.update_node(new_node_id, Node(new_node_host, new_node_port, new_node_id))
-        elif t_name == "announce_peer":            
+        elif t_name == "announce_peer":
             # if announcement successful, clear up entry in hashtable
             info_hash = trans["info_hash"]
             self.server.dht.announces.remove_hash(info_hash)
             logger.debug("Successful announce for %s" % info_hash.encode("hex"))
-            
+
     def handle_query(self, message):
         trans_id = message["t"]
         query_type = message["q"]
@@ -144,7 +147,7 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
 
         client_host, client_port = self.client_address
         logger.debug("Query message %s from %s:%d, id:%r" % (query_type, client_host, client_port, node_id.encode("hex")))
-        
+
         # Do we know already about this node?
         node = self.server.dht.rt.node_by_id(node_id)
         if not node:
@@ -183,20 +186,22 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
             return
         elif query_type == "announce_peer":
             logger.debug("handle query announce_peer")
-
+            node.pong(socket=self.server.socket, trans_id=trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
+            info_hash = args["info_hash"].encode("hex")
+            self.server.dht.ht.add_peer(info_hash, (node.host, node.port))
             ## check on token (need to store them beforehand when responding to get_peers)
-            token = args['token']
-            info_hash = args['info_hash']
-            node_id = args['id']
-            if not token: # let's ignore the call
-                logger.debug('No token received by ' % (node_id.encode('hex')))
-            else:
-                ctoken = node.get_local_token(info_hash)
-                if ctoken and token == ctoken:
-                    node.pong(socket=self.server.socket, trans_id = trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
-                    self.server.dht.ht.add_peer(info_hash, (node.host, node.port))
-                else:
-                    node.send_protocol_error("Bad token", socket=self.server.socket, trans_id = trans_id, lock=self.server.send_lock)
+            # token = args['token']
+            # info_hash = args['info_hash']
+            # node_id = args['id']
+            # if not token: # let's ignore the call
+            #     logger.debug('No token received by ' % (node_id.encode('hex')))
+            # else:
+            #     ctoken = node.get_local_token(info_hash)
+            #     if ctoken and token == ctoken:
+            #         node.pong(socket=self.server.socket, trans_id = trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
+            #         self.server.dht.ht.add_peer(info_hash, (node.host, node.port))
+            #     else:
+            #         node.send_protocol_error("Bad token", socket=self.server.socket, trans_id = trans_id, lock=self.server.send_lock)
 
             return
         else:
@@ -208,10 +213,12 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
         #print 'v=',message.get('v',None)
         return
 
+
 class DHTServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     def __init__(self, host_address, handler_cls):
         SocketServer.UDPServer.__init__(self, host_address, handler_cls)
         self.send_lock = threading.Lock()
+
 
 class DHT(object):
     def __init__(self, host, port):
@@ -222,7 +229,7 @@ class DHT(object):
         self.server.dht = self
         self.announces = HashTable()
         self.peer_tokens = HashTable()
-        
+
         self.bootstrap_count = BOOTSTRAP_COUNT
         self.sample_count = SAMPLE_COUNT
         self.max_bootstrap_errors = MAX_BOOTSTRAP_ERRORS
@@ -233,8 +240,8 @@ class DHT(object):
         self.randomize_node_id = RANDOMIZE_NODE_ID
         self.random_find_peers = RANDOM_FIND_PEERS
 
-        self.key = os.urandom(20) # 20 random bytes = 160 bits
-        
+        self.key = os.urandom(20)  # 20 random bytes = 160 bits
+
         self.running = False
 
         logger.debug("DHT Server listening on %s:%d" % (host, port))
@@ -243,6 +250,9 @@ class DHT(object):
 
         self.iterative_thread = threading.Thread(target=self.iterative)
         self.iterative_thread.daemon = True
+
+        self.download_thread = threading.Thread(target=self.download_metadata)
+        self.download_thread.daemon = True
 
     def start(self):
         self.server_thread.start()
@@ -265,8 +275,9 @@ class DHT(object):
             time.sleep(self.iteration_timeout)
 
         self.running = True
-        
+
         self.iterative_thread.start()
+        self.download_thread.start()
 
         return True
 
@@ -320,8 +331,14 @@ class DHT(object):
                             logger.error("Unknown token for %s" % hash_id.encode("hex"))
                 else:
                     logger.error("Cannot find node to announce to for %s" % hash_id.encode("hex"))
-                    
+
             time.sleep(self.iteration_timeout)
+
+    def download_metadata(self):
+
+        peers = self.server.dht.ht.get_one_hash()
+        t = threading.Thread(target=simMetadata.download_metadata, args=(peers[1], peers[0]))
+        t.start()
 
     def stop(self):
         self.running = False
@@ -329,7 +346,10 @@ class DHT(object):
         self.iterative_thread.join()
         logger.debug("Stopped iterative loop")
 
+        self.download_thread.join()
+        logger.debug("Stopped download loop")
+
         self.server.shutdown()
         self.server_thread.join()
         logger.debug("Stopped server thread")
-           
+
