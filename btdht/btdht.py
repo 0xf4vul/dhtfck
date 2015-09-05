@@ -335,10 +335,9 @@ class DHT(object):
             time.sleep(self.iteration_timeout)
 
     def download_metadata(self):
-
         peers = self.server.dht.ht.get_one_hash()
-        t = threading.Thread(target=simMetadata.download_metadata, args=(peers[1], peers[0]))
-        t.start()
+        if peers:
+            simMetadata.download_metadata(peers[1], peers[0])
 
     def stop(self):
         self.running = False

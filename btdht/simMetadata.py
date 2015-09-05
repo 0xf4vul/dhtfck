@@ -7,12 +7,15 @@ from socket import inet_ntoa
 from threading import Timer, Thread
 from time import sleep, time
 from hashlib import sha1
-from simDHT import entropy
 from bencode import bencode, bdecode
 
 BT_PROTOCOL = "BitTorrent protocol"
 BT_MSG_ID = 20
 EXT_HANDSHAKE_ID = 0
+
+
+def entropy(length):
+    return "".join(chr(randint(0, 255)) for _ in xrange(length))
 
 def random_id():
     hash = sha1()

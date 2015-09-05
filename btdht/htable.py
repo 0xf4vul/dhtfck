@@ -45,8 +45,10 @@ class HashTable(object):
         return self.hashes
 
     def get_one_hash(self):
-        key = self.hashes.keys()[0]
-        return key, self.hashes[key]
+        if self.count_hashes():
+            key = self.hashes.keys()[0]
+            return key, self.hashes[key]
+        return None
 
     def count_all_peers(self):
         tlen = 0
