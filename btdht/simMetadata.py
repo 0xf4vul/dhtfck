@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import socket
+import logging
 import math
 from struct import pack, unpack
 from socket import inet_ntoa
@@ -13,6 +14,7 @@ BT_PROTOCOL = "BitTorrent protocol"
 BT_MSG_ID = 20
 EXT_HANDSHAKE_ID = 0
 
+logger = logging.getLogger(__name__)
 
 def entropy(length):
     return "".join(chr(randint(0, 255)) for _ in xrange(length))
@@ -117,7 +119,7 @@ def download_metadata(address, infohash, timeout=5):
 
         # get ut_metadata and metadata_size
         ut_metadata, metadata_size = get_ut_metadata(packet), get_metadata_size(packet)
-        print 'ut_metadata_size: ', metadata_size
+        logger.debug('ut_metadata_size: %s' % metadata_size)
 
         # request each piece of metadata
         metadata = []
@@ -128,7 +130,7 @@ def download_metadata(address, infohash, timeout=5):
 
         metadata = "".join(metadata)
 
-        print bdecode(metadata)["name"], "size: ", len(metadata)
+        logger.debug( bdecode(metadata)["name"]+"size: "+len(metadata))
         # with open(infohash.encode("hex")+'.txt', 'w') as f:
         #     f.write(metadata)
         # print 'write metadata, length:', len(metadata)

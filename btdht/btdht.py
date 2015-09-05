@@ -54,12 +54,12 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
         # Do we know already about this node?
         node = self.server.dht.rt.node_by_id(node_id)
         if not node:
-            logger.debug("Cannot find appropriate node during simple search: %r" % (node_id.encode("hex")))
+            # logger.debug("Cannot find appropriate node during simple search: %r" % (node_id.encode("hex")))
 
             # Trying to search via transaction id
             node = self.server.dht.rt.node_by_trans(trans_id)
             if not node:
-                logger.debug("Cannot find appropriate node for transaction: %r" % (trans_id.encode("hex")))
+                # logger.debug("Cannot find appropriate node for transaction: %r" % (trans_id.encode("hex")))
                 return
 
         # logger.debug("We found apropriate node %r for %r" % (node, node_id.encode("hex")))
@@ -92,7 +92,7 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
 
             # cleanup boot node
             if node._id == "boot":
-                logger.debug("This is response from \"boot\" node, replacing it")
+                # logger.debug("This is response from \"boot\" node, replacing it")
                 # Create new node instance and move transactions from boot node to newly node
                 new_boot_node = Node(client_host, client_port, node_id)
                 new_boot_node.trans = node.trans
@@ -106,17 +106,17 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
             node.update_access()
             info_hash = trans["info_hash"]
 
-            logger.debug("get_peers response for %r" % (node))
+            # logger.debug("get_peers response for %r" % (node))
 
             if "token" in args:
                 token = args["token"]
-                logger.debug("Got token: %s" % (token.encode("hex")))
+                # logger.debug("Got token: %s" % (token.encode("hex")))
             else:
                 token = None
-                logger.error("No token in get_peers response from %r" % (node))
+                # logger.error("No token in get_peers response from %r" % (node))
 
             if "values" in args:
-                logger.debug("We got new peers for %s" % (info_hash.encode("hex")))
+                # logger.debug("We got new peers for %s" % (info_hash.encode("hex")))
                 if token:
                     logger.debug("got token %s from %s" % (token.encode("hex"), node._id.encode("hex")))
                     self.server.dht.peer_tokens.add_hash(info_hash)
@@ -126,18 +126,18 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
                 for addr in values:
                     hp = unpack_hostport(addr)
                     self.server.dht.ht.add_peer(info_hash, hp)
-                    logger.debug("Got new peer for %s: %r" % (info_hash.encode("hex"), hp))
+                    # logger.debug("Got new peer for %s: %r" % (info_hash.encode("hex"), hp))
             if "nodes" in args:
-                logger.debug("We got new nodes from %r" % (node))
+                # logger.debug("We got new nodes from %r" % (node))
                 new_nodes = decode_nodes(args["nodes"])
                 for new_node_id, new_node_host, new_node_port in new_nodes:
-                    logger.debug("Adding %r %s:%d as new node" % (new_node_id.encode("hex"), new_node_host, new_node_port))
+                    # logger.debug("Adding %r %s:%d as new node" % (new_node_id.encode("hex"), new_node_host, new_node_port))
                     self.server.dht.rt.update_node(new_node_id, Node(new_node_host, new_node_port, new_node_id))
         elif t_name == "announce_peer":
             # if announcement successful, clear up entry in hashtable
             info_hash = trans["info_hash"]
             self.server.dht.announces.remove_hash(info_hash)
-            logger.debug("Successful announce for %s" % info_hash.encode("hex"))
+            # logger.debug("Successful announce for %s" % info_hash.encode("hex"))
 
     def handle_query(self, message):
         trans_id = message["t"]
@@ -146,29 +146,30 @@ class DHTRequestHandler(SocketServer.BaseRequestHandler):
         node_id = args["id"]
 
         client_host, client_port = self.client_address
-        logger.debug("Query message %s from %s:%d, id:%r" % (query_type, client_host, client_port, node_id.encode("hex")))
+        # logger.debug("Query message %s from %s:%d, id:%r" % (query_type, client_host, client_port, node_id.encode("hex")))
 
         # Do we know already about this node?
         node = self.server.dht.rt.node_by_id(node_id)
         if not node:
             node = Node(client_host, client_port, node_id)
-            logger.debug("We don`t know about %r, add it as new" % (node))
+            # logger.debug("We don`t know about %r, add it as new" % (node))
             self.server.dht.rt.update_node(node_id, node)
         else:
-            logger.debug("We already know about: %r" % (node))
+            pass
+            # logger.debug("We already know about: %r" % (node))
 
         node.update_access()
 
         if query_type == "ping":
-            logger.debug("handle query ping")
+            # logger.debug("handle query ping")
             node.pong(socket=self.server.socket, trans_id = trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
         elif query_type == "find_node":
-            logger.debug("handle query find_node")
+            # logger.debug("handle query find_node")
             target = args["target"]
             found_nodes = encode_nodes(self.server.dht.rt.get_close_nodes(target, 8))
             node.found_node(found_nodes, socket=self.server.socket, trans_id = trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
         elif query_type == "get_peers":
-            logger.debug("handle query get_peers")
+            # logger.debug("handle query get_peers")
             #node.pong(socket=self.server.socket, trans_id = trans_id, sender_id=self.server.dht.node._id, lock=self.server.send_lock)
             info_hash = args["info_hash"]
             token = create_token(self.server.dht.key,info_hash,node_id)

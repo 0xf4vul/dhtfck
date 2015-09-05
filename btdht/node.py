@@ -97,13 +97,13 @@ class Node(object):
             "y": "e",
             "e": [ 203, msg ]
             }
-        logger.debug("protocol error msg to %s:%d, y:%s, t: %r, m: %s" % (
-            self.host,
-            self.port,
-            message["y"],
-            trans_id.encode("hex"),
-            msg
-        ))
+        # logger.debug("protocol error msg to %s:%d, y:%s, t: %r, m: %s" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     trans_id.encode("hex"),
+        #     msg
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
     def ping(self, socket=None, sender_id=None, lock=None):
@@ -133,12 +133,12 @@ class Node(object):
                 "id": sender_id
             }
         }
-        logger.debug("pong msg to %s:%d, y:%s, t: %r" % (
-            self.host,
-            self.port,
-            message["y"],
-            trans_id.encode("hex")
-        ))
+        # logger.debug("pong msg to %s:%d, y:%s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
     def find_node(self, target_id, socket=None, sender_id=None, lock=None):
@@ -171,12 +171,12 @@ class Node(object):
                 "nodes": found_nodes
             }
         }
-        logger.debug("found_node msg to %s:%d, y:%s, t: %r" % (
-            self.host,
-            self.port,
-            message["y"],
-            trans_id.encode("hex")
-        ))
+        # logger.debug("found_node msg to %s:%d, y:%s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
     def get_peers(self, info_hash, socket=None, sender_id=None, lock=None):
@@ -190,13 +190,13 @@ class Node(object):
                 "info_hash": info_hash
             }
         }
-        logger.debug("get_peers msg to %s:%d, y:%s, q:%s, t: %r" % (
-            self.host,
-            self.port,
-            message["y"],
-            message["q"],
-            trans_id.encode("hex")
-        ))
+        # logger.debug("get_peers msg to %s:%d, y:%s, q:%s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     message["q"],
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
     def got_peers(self, token, values, nodes, socket=None, trans_id=None, sender_id=None, lock=None):
@@ -220,15 +220,15 @@ class Node(object):
                     "values": values
                 }
             }
-        logger.info("got_peers msg to %s:%d, y:%s, v: %s, n: %s, tok: %s, t: %r" % (
-            self.host,
-            self.port,
-            message["y"],
-            message["r"].get("values",None),
-            decode_nodes(message["r"].get("nodes",None)),
-            message["r"]["token"].encode("hex"),
-            trans_id.encode("hex")
-        ))
+        # logger.info("got_peers msg to %s:%d, y:%s, v: %s, n: %s, tok: %s, t: %r" % (
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     message["r"].get("values",None),
+        #     decode_nodes(message["r"].get("nodes",None)),
+        #     message["r"]["token"].encode("hex"),
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
 
 
@@ -246,14 +246,14 @@ class Node(object):
                 "token": token
             }
         }
-        logger.debug("announce_peer msg to %s --> %s:%d, y:%s, q:%s, ih: %s, tok: %s, t: %r" % (
-            self._id.encode("hex"),
-            self.host,
-            self.port,
-            message["y"],
-            message["q"],
-            message["a"]["info_hash"].encode("hex"),
-            message["a"]["token"].encode("hex"),
-            trans_id.encode("hex")
-        ))
+        # logger.debug("announce_peer msg to %s --> %s:%d, y:%s, q:%s, ih: %s, tok: %s, t: %r" % (
+        #     self._id.encode("hex"),
+        #     self.host,
+        #     self.port,
+        #     message["y"],
+        #     message["q"],
+        #     message["a"]["info_hash"].encode("hex"),
+        #     message["a"]["token"].encode("hex"),
+        #     trans_id.encode("hex")
+        # ))
         self._sendmessage(message, socket, trans_id=trans_id, lock=lock)
